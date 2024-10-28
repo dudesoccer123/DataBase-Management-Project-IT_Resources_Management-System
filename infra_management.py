@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 
 
 
@@ -31,6 +32,11 @@ def handle_login(username, password, login_type):
         st.rerun()  
     else:
         st.error("Invalid credentials!")
+    
+# this function runs when the "submit request" button is clicked in the UI. 
+def handle_resource_request(resource_type,resource_id,user) :
+    # code to allocate the resource user and run the database function for the same. 
+    pass
 
 #-------------------------------------------------------------------------------------------------------------#
 
@@ -65,8 +71,31 @@ def admin_dashboard():
     st.markdown(f"<h1 style='text-align: center;'>Welcome, {st.session_state['username']}! You are logged in as an Administrator</h1>", unsafe_allow_html=True)
     st.write("__________")
     st.markdown("<h2 style='text-align: center;'>Admin Dashboard</h2>", unsafe_allow_html=True)
-    st.write("the admin should be able to view which resource is allocated to which employee. Also should be able to view the pending requests for resources and to accept/deny that request.")
-    
+    st.write("__________")
+    st.write("the admin should be able to view which resource is allocated to which employee.")
+    st.write("__________")
+    requests_data = [
+    {"request_id": "001", "request_name": "New Laptop"},
+    {"request_id": "002", "request_name": "Adobe Photoshop License"},
+    # Add more entries as needed
+    ]
+
+    # Display each request in a container
+    for request in requests_data:
+        with st.container():
+            st.write(f"**Request ID:** {request['request_id']}")
+            st.write(f"**Request Name:** {request['request_name']}")
+            
+            # Create two columns for the buttons
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("Accept", key=f"accept_{request['request_id']}"):
+                    st.success(f"Resource {request['request_name']} allocated successfully.")
+                    
+            with col2:
+                if st.button("Reject", key=f"reject_{request['request_id']}"):
+                    st.error(f"Request {request['request_name']} denied.")
+    st.write("__________")
     if st.button("Create An Account"):
         st.session_state["page"] = "create_acc"  
         st.rerun()  
@@ -108,9 +137,26 @@ def request_resource_page():
         st.session_state["page"] = "user_homepage"  
         st.rerun() 
 
+    user = st.session_state['username']
+
     st.markdown("<h1 style='text-align: center;'>Resource Request</h1>", unsafe_allow_html=True)
     st.write("_______________")
     st.markdown("<h3 style='text-align: center;'>Resource request Dashboard</h3>", unsafe_allow_html=True)
+
+    st.write("_______________")
+
+    with st.form("resource_request_form"):
+        resource_type = st.selectbox("Select Resource Type:", ["Hardware", "Software"])
+
+        resource_id = st.text_input("Enter Resource ID (Unique to each resource)")
+
+        submitted = st.form_submit_button("Submit Request")
+        if submitted:
+            handle_resource_request(resource_type,resource_id,user)
+            st.success(f"Request submitted for {resource_type} with ID {resource_id}!")
+            time.sleep(2)
+            st.session_state["page"] = "user_homepage"
+            st.rerun() 
 
 
 #___________________________________________________________________________________________________
