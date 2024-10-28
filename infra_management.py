@@ -38,6 +38,15 @@ def handle_resource_request(resource_type,resource_id,user) :
     # code to allocate the resource user and run the database function for the same. 
     pass
 
+import streamlit as st
+
+# Example request data (in practice, you'd load this from a database)
+requests_data = [
+    {"request_id": "001", "request_name": "New Laptop"},
+    {"request_id": "002", "request_name": "Adobe Photoshop License"},
+]
+
+
 #-------------------------------------------------------------------------------------------------------------#
 
 # Define different "pages" (screens)
@@ -75,27 +84,43 @@ def admin_dashboard():
     st.write("the admin should be able to view which resource is allocated to which employee.")
     st.write("__________")
     requests_data = [
-    {"request_id": "001", "request_name": "New Laptop"},
-    {"request_id": "002", "request_name": "Adobe Photoshop License"},
+    {"request_id": "001", "request_name": "New Laptop","emp_name" : "john"},
+    {"request_id": "002", "request_name": "Adobe Photoshop License", "emp_name" :"jake"},
     # Add more entries as needed
     ]
 
-    # Display each request in a container
-    for request in requests_data:
-        with st.container():
-            st.write(f"**Request ID:** {request['request_id']}")
-            st.write(f"**Request Name:** {request['request_name']}")
-            
-            # Create two columns for the buttons
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                if st.button("Accept", key=f"accept_{request['request_id']}"):
-                    st.success(f"Resource {request['request_name']} allocated successfully.")
-                    
-            with col2:
-                if st.button("Reject", key=f"reject_{request['request_id']}"):
-                    st.error(f"Request {request['request_name']} denied.")
-    st.write("__________")
+    
+    for index, request in enumerate(requests_data):
+        st.markdown(
+            f"""
+            <div style='background-color: #306778; padding: 15px; border-radius: 10px; margin-bottom: 15px;'>
+                <strong>Request ID:</strong> {request['request_id']}<br>
+                <strong>Request Name:</strong> {request['request_name']}<br>
+                <strong>Employee Name:</strong> {request['emp_name']}
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("Accept", key=f"accept_{request['request_id']}"):
+                st.success(f"Resource {request['request_name']} allocated successfully.")
+                del requests_data[index]  # Remove the accepted request
+                time.sleep(1)
+                st.rerun()  # Rerun to refresh the updated list
+
+        with col2:
+            if st.button("Reject", key=f"reject_{request['request_id']}"):
+                st.error(f"Request {request['request_name']} denied.")
+                del requests_data[index]  # Remove the rejected request
+                time.sleep(1)
+                st.rerun()  # Rerun to refresh the updated list
+        st.write("---")
+
+
+   
     if st.button("Create An Account"):
         st.session_state["page"] = "create_acc"  
         st.rerun()  
@@ -103,8 +128,6 @@ def admin_dashboard():
     if st.button("Update Resources"):
         st.session_state["page"] = "update_resource"  
         st.rerun()  
-
-    
 
 
 #___________________________________________________________________________________________________
