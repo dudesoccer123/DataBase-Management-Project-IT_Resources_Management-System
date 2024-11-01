@@ -12,6 +12,10 @@ if "username" not in st.session_state:
     st.session_state["username"] = ""  # Initialize username
 
 
+if "userID" not in st.session_state:
+    st.session_state["userID"] = ""  # Initialize username
+
+
 #------------------------------------------------------------------------------------------------------------#
 
 # Functions to handle different functionalities
@@ -20,7 +24,7 @@ def handle_login(username, password, login_type):
     '''
     if the "login_type variable is "user" then look in the users table. else look in the admin table. 
     '''
-    
+    # after login , initialize the userID session state as well.
 
     if username == "admin" and password == "admin":
         st.session_state["page"] = "admin_dashboard"  
@@ -34,17 +38,31 @@ def handle_login(username, password, login_type):
         st.error("Invalid credentials!")
     
 # this function runs when the "submit request" button is clicked in the UI. 
-def handle_resource_request(resource_type,resource_id,user) :
-    # code to allocate the resource user and run the database function for the same. 
+def handle_resource_request(resource_type,resource_id,userID) :
+    # code to allocate the resource  to user and run the database function for the same. 
     pass
 
-import streamlit as st
+def get_allocated_resources_information(userID):
+    # write code here to use the "userID" passed in to obtain the list of allocated resources to that particular employee.
+    # is no resources available, then just display a message "No resources allocated at the present."
+    pass
 
-# Example request data (in practice, you'd load this from a database)
-requests_data = [
-    {"request_id": "001", "request_name": "New Laptop"},
-    {"request_id": "002", "request_name": "Adobe Photoshop License"},
-]
+def get_employee_information(userID):
+    #write code to use the "userID" passed into this function, and obtain all information about the employee 
+    # display that information into the ui.
+    pass
+
+def handle_new_employee_creation(emp_name,emp_email,emp_role,emp_is_admin) :
+    #generate usernme and password. 
+    # allocate the employee to work on a project / team (no UI needed for this)
+    # write all details to the tables that we have on the database. 
+    pass
+
+
+
+
+
+
 
 
 #-------------------------------------------------------------------------------------------------------------#
@@ -83,6 +101,7 @@ def admin_dashboard():
     st.write("__________")
     st.write("the admin should be able to view which resource is allocated to which employee.")
     st.write("__________")
+    # USe database to get the list of all requests pending and add that information into this dictionary.
     requests_data = [
     {"request_id": "001", "request_name": "New Laptop","emp_name" : "john"},
     {"request_id": "002", "request_name": "Adobe Photoshop License", "emp_name" :"jake"},
@@ -142,10 +161,12 @@ def user_homepage():
     st.markdown(f"<h1 style='text-align: center;'>Welcome, {st.session_state['username']}! You are logged in as a User.</h1>", unsafe_allow_html=True)
     st.write("__________")
     st.markdown("<h2 style='text-align: left;'>Employee Information</h2>", unsafe_allow_html=True)
+    get_employee_information(st.session_state['userID'])
     st.write(" <data from database in the form of a dshboard> ")
 
     st.write("__________")
     st.markdown("<h2 style='text-align: left;'>Allocated Resources Information</h2>", unsafe_allow_html=True)
+    get_allocated_resources_information(st.session_state['userID'])
     st.write(" <data from database in the form of a table> ")
 
     st.write("__________")
@@ -175,7 +196,7 @@ def request_resource_page():
 
         submitted = st.form_submit_button("Submit Request")
         if submitted:
-            handle_resource_request(resource_type,resource_id,user)
+            handle_resource_request(resource_type,resource_id,st.session_state['userID'])
             st.success(f"Request submitted for {resource_type} with ID {resource_id}!")
             time.sleep(2)
             st.session_state["page"] = "user_homepage"
@@ -191,7 +212,23 @@ def create_account_page():
 
     st.markdown("<h1 style='text-align: center;'>Create New Employee Account</h1>", unsafe_allow_html=True)
     st.write("_______________")
-    st.markdown("<h3 style='text-align: center;'>Form to create a new employee</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>Please Enter the details below.</h3>", unsafe_allow_html=True)
+
+    with st.form("create_acc_form"):
+        emp_name = st.text_input("Enter the employee name: ")
+        emp_email = st.text_input("Enter the employee Email-ID: ")
+        emp_role = st.text_input("Entr the employee role: ")
+        is_admin = st.radio("Is the new employee an administrator?:", ["Yes", "No"])
+        submitted = st.form_submit_button("Submit Request")
+        if submitted:
+            handle_new_employee_creation(emp_name,emp_email,emp_role,is_admin)
+
+            st.success(f"New Employee Created Successfully!")
+            time.sleep(2)
+            st.session_state["page"] = "create_acc"
+            st.rerun() 
+
+    
 
 
 #__________________________________________________________________________________________________
