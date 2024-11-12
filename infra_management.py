@@ -8,7 +8,7 @@ from mysql.connector import Error
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'your db password',
+    'password': 'your_db_pw',
     'database': 'it_infra_mgmt'
 }
 
@@ -70,6 +70,7 @@ def get_employee_information(userID):
             
             if result:
                 st.write(f"**Name:** {result['Name']}")
+                st.write(f"**Email Address:** {result['Email']}")
                 st.write(f"**Role:** {result['Role']}")
                 st.write(f"**Team:** {result['Team_Name']}")
                 st.write(f"**Current Project:** {result['Project_Name']}")
@@ -123,20 +124,28 @@ def handle_new_employee_creation(emp_name, emp_email, emp_role, emp_is_admin):
     conn = get_db_connection()
     if conn is not None:
         try:
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor()
             is_admin = emp_is_admin.lower() == 'yes'
-            cursor.callproc('create_new_employee', [emp_name, emp_email, emp_role, is_admin])
-            credentials = next(cursor.stored_results()).fetchone()
+            
+            # Include placeholders for OUT parameters (None)
+            args = [emp_name, emp_email, emp_role, is_admin, None, None]
+            cursor.callproc('create_new_employee', args)
+            
+            # Retrieve OUT parameter values
+            emp_username = args[4]
+            emp_password = args[5]
+            
             conn.commit()
             
             st.success("Employee created successfully!")
             st.write("Generated credentials:")
-            st.write(f"Username: {credentials['username']}")
-            st.write(f"Password: {credentials['password']}")
+            st.write(f"Username: {emp_username}")
+            st.write(f"Password: {emp_password}")
         except Error as e:
             st.error(f"Error creating employee: {e}")
         finally:
             conn.close()
+
 
 # Add this to admin_dashboard function
 def get_pending_requests():
@@ -167,20 +176,57 @@ def handle_request_response(request_id, approved):
             conn.close()
 
 
-def handle_addition_of_new_hardware(h_id, h_name , h_desc , h_use , h_alloc_status):
-    pass 
+def handle_addition_of_new_hardware(h_id, h_name, h_desc, h_use, h_alloc_status):
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.callproc('handle_addition_of_new_hardware', [h_id, h_name, h_desc, h_use, h_alloc_status])
+            conn.commit()
+        finally:
+            conn.close()
 
-def handle_addition_of_new_software(s_id, s_name , s_desc , s_key , s_docs , s_alloc_status):
-    pass
 
-def handle_hardware_updation(h_id, h_name , h_desc , h_use , h_alloc_status):
-    pass
+def handle_addition_of_new_software(s_id, s_name, s_desc, s_key, s_docs, s_alloc_status):
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.callproc('handle_addition_of_new_software', [s_id, s_name, s_desc, s_key, s_docs, s_alloc_status])
+            conn.commit()
+        finally:
+            conn.close()
 
-def handle_software_updation(s_id, s_name , s_desc , s_key , s_docs , s_alloc_status):
-    pass
 
-def handle_resource_deletion(resource_t_2,r_id):
-    pass 
+def handle_hardware_updation(h_id, h_name, h_desc, h_use, h_alloc_status):
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.callproc('handle_hardware_updation', [h_id, h_name, h_desc, h_use, h_alloc_status])
+            conn.commit()
+        finally:
+            conn.close()
+
+def handle_software_updation(s_id, s_name, s_desc, s_key, s_docs, s_alloc_status):
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.callproc('handle_software_updation', [s_id, s_name, s_desc, s_key, s_docs, s_alloc_status])
+            conn.commit()
+        finally:
+            conn.close()
+
+def handle_resource_deletion(resource_t_2, r_id):
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.callproc('handle_resource_deletion', [resource_t_2, r_id])
+            conn.commit()
+        finally:
+            conn.close()
 
 
 #-------------------------------------------------------------------------------------------------------------#
