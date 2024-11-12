@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS it_infra_mgmt;
 USE it_infra_mgmt;
 
--- Team Table (without foreign key)
+-- Team Table (with foreign key for Headed_By added later)
 CREATE TABLE Team (
     Team_ID INT AUTO_INCREMENT PRIMARY KEY,
     Team_Name VARCHAR(100) NOT NULL,
@@ -9,14 +9,14 @@ CREATE TABLE Team (
     Headed_By INT -- This will reference Employee_ID but added later as a foreign key
 );
 
--- Employee Table (without foreign key)
+-- Employee Table (with Is_Admin as integer and foreign key for Team_ID added later)
 CREATE TABLE Employee (
     Employee_ID INT AUTO_INCREMENT PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
     Role VARCHAR(100),
     Username VARCHAR(100) UNIQUE NOT NULL,
     Password VARCHAR(100) NOT NULL,
-    Is_Admin BOOLEAN DEFAULT FALSE,
+    Is_Admin INT DEFAULT 0, -- Changed to integer (1 for admin, 0 for non-admin)
     Team_ID INT -- This will reference Team_ID but added later as a foreign key
 );
 
@@ -29,6 +29,7 @@ CREATE TABLE Hardware (
     Allocation_Status VARCHAR(50) NOT NULL
 );
 
+
 -- Software Table
 CREATE TABLE Software (
     Software_ID INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,16 +40,22 @@ CREATE TABLE Software (
     Allocation_Status VARCHAR(50) NOT NULL
 );
 
--- Request Table
+ALTER TABLE Hardware ADD COLUMN Allocated_To INT DEFAULT NULL;
+ALTER TABLE Software ADD COLUMN Allocated_To INT DEFAULT NULL;
+
+
+-- Request Table (Foreign keys for Hardware_Allocated and Software_Allocated added later)
 CREATE TABLE Request (
     Request_ID INT AUTO_INCREMENT PRIMARY KEY,
-    Date_Of_Request DATE NOT NULL,
-    Employee_ID VARCHAR(100) NOT NULL,
-    Hardware_Allocated INT,
-    Software_Allocated INT
+    Employee_ID INT NOT NULL,
+    Resource_Type VARCHAR(10) NOT NULL,
+    Resource_ID INT NOT NULL,
+    Status VARCHAR(10) DEFAULT 'Pending',
+    Date_Of_Request TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID)
 );
 
--- Project Table (without foreign key)
+-- Project Table (foreign key for Team_ID added later)
 CREATE TABLE Project (
     Project_ID INT AUTO_INCREMENT PRIMARY KEY,
     Project_Start_Date DATE,
@@ -81,95 +88,52 @@ ALTER TABLE Project
 ADD CONSTRAINT fk_project_team
 FOREIGN KEY (Team_ID) REFERENCES Team(Team_ID);
 
+
 -- Insert sample data into Team table
 INSERT INTO Team (Team_Name, No_Of_Members, Headed_By)
-VALUES
-('Network Operations', 8, NULL),  -- The Headed_By will be updated later
-('Cybersecurity', 5, NULL);
+VALUES 
+('Network Security', 5, NULL),      -- Headed by Alice Johnson 1
+('Software Development', 8, NULL),  -- Headed by Bob Williams (Admin) 2
+('Technical Support', 6, NULL),     -- Headed by David Brown 4
+('Data Analysis', 4, NULL);         -- Headed by Carol Smith 3
 
 -- Insert sample data into Employee table
 INSERT INTO Employee (Name, Role, Username, Password, Is_Admin, Team_ID)
 VALUES
-('Alice Green', 'Network Engineer', 'alice_green', 'securePass123!', TRUE, 1),
-('Bob Smith', 'Security Analyst', 'bob_smith', 'safeSystem1', FALSE, 2),
-('Charlie Baker', 'Systems Administrator', 'charlie_baker', 'sysAdmin#45', FALSE, 1),
-('Eve Turner', 'Technical Support', 'eve_turner', 'supportHelp', FALSE, NULL),
-('David Cole', 'Network Lead', 'david_cole', 'leadNet2023', TRUE, 1);
+('Alice Johnson', 'Network Engineer', 'alice.johnson', 'password123!', 0, 1),
+('Bob Williams', 'Senior Developer', 'bob.williams', 'password456!', 1, 2), -- Admin user
+('Carol Smith', 'Data Analyst', 'carol.smith', 'data@123', 0, 4),
+('David Brown', 'Support Specialist', 'david.brown', 'support@789', 0, 3),
+('Eve Davis', 'Software Engineer', 'eve.davis', 'dev@abc', 0, 2);
 
--- Update Headed_By in Team table (now referencing Employee)
-UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'David Cole') WHERE Team_Name = 'Network Operations';
-UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'Bob Smith') WHERE Team_Name = 'Cybersecurity';
+UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'Alice Johnson') WHERE Team_Name = 'Network Security';
+UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'Bob Williams') WHERE Team_Name = 'Software Development';
+UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'David Brown') WHERE Team_Name = 'Technical Support';
+UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'Carol Smith') WHERE Team_Name = 'Data Analysis';
 
--- Insert sample data into Hardware table
+-- Insert sample data into Hardware table (All unallocated by default)
 INSERT INTO Hardware (Name, Description, Usage_Instructions, Allocation_Status)
 VALUES
-('High-Speed Router', 'Router with enhanced data processing speed', 'Ensure it is properly grounded.', 'Allocated'),
-('Secure Server Unit', 'High-security server with advanced encryption', 'Keep in a controlled access room.', 'Available'),
-('Firewall Protection Device', 'Advanced firewall for network security', 'Configure according to network protocol.', 'Allocated');
+('Dell PowerEdge R540', 'Rack Server with 64GB RAM and 1TB Storage', 'For network infrastructure use only', 'Available'),
+('Cisco Catalyst 9200', 'Network switch with 48 ports', 'Setup in secure server rooms', 'Available'),
+('HP LaserJet Pro M404', 'Monochrome Laser Printer', 'Use for official document printing', 'Available'),
+('Lenovo ThinkPad X1', 'Laptop with Intel i7 and 16GB RAM', 'Assigned to employees as needed', 'Available');
 
--- Insert sample data into Software table
+-- Insert sample data into Software table (All unallocated by default)
 INSERT INTO Software (Name, Description, License_Key, Documentation, Allocation_Status)
 VALUES
-('Windows Server 2022', 'Server OS with high performance', 'WIN-SVR-2022-LIC', 'Refer to Microsoft Docs.', 'Allocated'),
-('VPN Security Suite', 'VPN with encryption and privacy controls', 'VPN-SUI-3042', 'Refer to privacy setup guide.', 'Available'),
-('Malware Defender Pro', 'Malware protection software', 'DEF-443-MLW', 'Consult setup manual for configurations.', 'Allocated');
-
--- Insert sample data into Request table
-INSERT INTO Request (Date_Of_Request, Email_ID, Hardware_Allocated, Software_Allocated)
-VALUES
-('2024-10-01', 'alice_green@networkops.com', 1, 1),  -- High-Speed Router and Windows Server 2022
-('2024-10-02', 'charlie_baker@networkops.com', 3, 3); -- Firewall Protection Device and Malware Defender Pro
+('Microsoft Office 365', 'Productivity Suite including Word, Excel, and PowerPoint', 'ABC123-XYZ789', 'User manual available online', 'Available'),
+('Adobe Photoshop CC', 'Photo editing software', 'PHOTOSHOP-2024-XYZ', 'Access online tutorials for usage', 'Available'),
+('Tableau', 'Data visualization tool for analysis', 'TAB-2024-XYZ987', 'Install guide provided with license', 'Available'),
+('AutoCAD', 'Software for 2D and 3D design', 'AUTO-CAD-12345', 'Follow setup documentation carefully', 'Available');
 
 -- Insert sample data into Project table
 INSERT INTO Project (Project_Start_Date, Budget, Name, Team_ID)
 VALUES
-('2024-09-15', 25000.00, 'Infrastructure Upgrade', 1),
-('2024-09-20', 12000.00, 'Cyber Defense Initiative', 2);
-
--- Insert additional data into Team table
-INSERT INTO Team (Team_Name, No_Of_Members, Headed_By)
-VALUES
-('Data Analytics', 6, NULL),  -- The Headed_By will be updated later
-('Cloud Solutions', 4, NULL);
-
--- Insert additional data into Employee table
-INSERT INTO Employee (Name, Role, Username, Password, Is_Admin, Team_ID)
-VALUES
-('Grace Hopper', 'Lead Data Scientist', 'grace_hopper', 'analyzeData42', TRUE, 3),
-('Elon Clarke', 'Cloud Architect', 'elon_clarke', 'cloudBuild', FALSE, 4),
-('Isaac Newton', 'Data Engineer', 'isaac_newton', 'dataPipe#2024', FALSE, 3),
-('Marie Curie', 'Admin Support', 'marie_curie', 'radiantAdmin', FALSE, NULL),
-('John Doe', 'Cloud Engineer', 'john_doe', 'cloudSys2023', TRUE, 4);
-
--- Update Headed_By in Team table (now referencing Employee)
-UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'Grace Hopper') WHERE Team_Name = 'Data Analytics';
-UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'John Doe') WHERE Team_Name = 'Cloud Solutions';
-
--- Insert additional data into Hardware table
-INSERT INTO Hardware (Name, Description, Usage_Instructions, Allocation_Status)
-VALUES
-('Big Data Server', 'Server optimized for data storage and processing', 'Ensure data compliance.', 'Allocated'),
-('Cloud Server X3000', 'Scalable cloud server for enterprise applications', 'Set up access controls.', 'Available'),
-('Data Firewall', 'Firewall with data-centric security', 'Configure data flow protocols.', 'Allocated');
-
--- Insert additional data into Software table
-INSERT INTO Software (Name, Description, License_Key, Documentation, Allocation_Status)
-VALUES
-('Apache Spark', 'Big data processing framework', 'SPRK-2024-ENG', 'Refer to official documentation.', 'Allocated'),
-('AWS Toolkit', 'Cloud management and security tools', 'AWS-CLD-PRT', 'Check AWS setup guide.', 'Available'),
-('Tableau Pro', 'Data visualization and analytics software', 'TAB-2024-VIS', 'Follow visualization guide.', 'Allocated');
-
--- Insert additional data into Request table
-INSERT INTO Request (Date_Of_Request, Email_ID, Hardware_Allocated, Software_Allocated)
-VALUES
-('2024-10-03', 'grace_hopper@dataanalytics.com', 5, 5),  -- Big Data Server and Apache Spark
-('2024-10-04', 'elon_clarke@cloudsolutions.com', 6, 6); -- Cloud Server X3000 and AWS Toolkit
-
--- Insert additional data into Project table
-INSERT INTO Project (Project_Start_Date, Budget, Name, Team_ID)
-VALUES
-('2024-10-05', 18000.00, 'Data Lake Implementation', 3),
-('2024-10-10', 15000.00, 'Cloud Infrastructure Setup', 4);
+('2024-01-15', 100000.00, 'Network Overhaul 2024', 1),
+('2023-09-01', 50000.00, 'Customer Support Automation', 3),
+('2023-06-01', 75000.00, 'Market Insights Analysis', 4),
+('2024-03-01', 150000.00, 'Mobile App Development', 2);
 
 
 -- Login function
@@ -180,20 +144,152 @@ CREATE FUNCTION validate_login(
 ) RETURNS INT
 DETERMINISTIC
 BEGIN
-    DECLARE user_id INT;
-    DECLARE is_admin BOOLEAN;
-    
-    SELECT Employee_ID, Is_Admin INTO user_id, is_admin
+    DECLARE login_status INT DEFAULT 0;
+
+    SELECT CASE 
+               WHEN Is_Admin = 1 THEN 1 
+               ELSE 2 
+           END INTO login_status
     FROM Employee
     WHERE Username = p_username AND Password = p_password
     LIMIT 1;
+
+    RETURN login_status; -- 1 for admin login, 2 for regular user login, 0 if login failed
+END //
+DELIMITER ;
+
+-- Get employee details
+DELIMITER //
+CREATE PROCEDURE get_employee_details(
+    IN p_employee_id INT
+)
+BEGIN
+    SELECT 
+        e.Employee_ID,
+        e.Name,
+        e.Role,
+        t.Team_Name,
+        p.Name AS Project_Name,
+        p.Project_Start_Date,
+        p.Budget
+    FROM Employee e
+    LEFT JOIN Team t ON e.Team_ID = t.Team_ID
+    LEFT JOIN Project p ON t.Team_ID = p.Team_ID
+    WHERE e.Employee_ID = p_employee_id;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE get_allocated_resources(
+    IN p_employee_id INT
+)
+BEGIN
+    -- Fetch allocated hardware resources
+    SELECT 
+        h.Name AS Hardware_Name,
+        h.Description AS Hardware_Description,
+        NULL AS Software_Name,
+        NULL AS Software_Description
+    FROM Hardware h
+    WHERE h.Allocated_To = p_employee_id AND h.Allocation_Status = 'Allocated'
     
-    IF user_id IS NULL THEN
-        RETURN 0; -- Login failed
-    ELSEIF is_admin THEN
-        RETURN 1; -- Admin login
+    UNION ALL
+    
+    -- Fetch allocated software resources
+    SELECT 
+        NULL AS Hardware_Name,
+        NULL AS Hardware_Description,
+        s.Name AS Software_Name,
+        s.Description AS Software_Description
+    FROM Software s
+    WHERE s.Allocated_To = p_employee_id AND s.Allocation_Status = 'Allocated';
+END //
+DELIMITER ;
+
+-- submit resource request
+DELIMITER //
+CREATE PROCEDURE submit_resource_request(
+    IN p_employee_id INT,
+    IN p_resource_type VARCHAR(10),
+    IN p_resource_id INT
+)
+BEGIN
+    DECLARE resource_allocated INT DEFAULT 0;
+
+    -- Check if the resource is already allocated
+    IF p_resource_type = 'Hardware' THEN
+        SELECT COUNT(*) INTO resource_allocated
+        FROM Hardware
+        WHERE Hardware_ID = p_resource_id AND Allocation_Status = 'Allocated';
+    ELSEIF p_resource_type = 'Software' THEN
+        SELECT COUNT(*) INTO resource_allocated
+        FROM Software
+        WHERE Software_ID = p_resource_id AND Allocation_Status = 'Allocated';
+    END IF;
+
+    -- If the resource is already allocated, signal an error
+    IF resource_allocated > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Resource is already allocated.';
     ELSE
-        RETURN 2; -- Regular user login
+        -- Insert the request if the resource is available
+        INSERT INTO Request (Employee_ID, Resource_Type, Resource_ID, Status)
+        VALUES (p_employee_id, p_resource_type, p_resource_id, 'Pending');
     END IF;
 END //
 DELIMITER ;
+
+
+-- Get pending requests
+DELIMITER //
+CREATE PROCEDURE get_pending_requests()
+BEGIN
+    SELECT 
+        r.Request_ID,
+        r.Date_Of_Request,
+        r.Employee_ID,
+        e.Name AS Employee_Name,
+        CASE 
+            WHEN r.Resource_Type = 'Hardware' THEN h.Name
+            WHEN r.Resource_Type = 'Software' THEN s.Name
+        END AS Resource_Name,
+        r.Resource_Type
+    FROM Request r
+    JOIN Employee e ON r.Employee_ID = e.Employee_ID
+    LEFT JOIN Hardware h ON r.Resource_Type = 'Hardware' AND r.Resource_ID = h.Hardware_ID
+    LEFT JOIN Software s ON r.Resource_Type = 'Software' AND r.Resource_ID = s.Software_ID
+    WHERE r.Status = 'Pending' 
+      AND (h.Allocation_Status = 'Available' OR s.Allocation_Status = 'Available');
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE handle_request_approval(
+    IN p_request_id INT,
+    IN p_approved BOOLEAN
+)
+BEGIN
+    -- Retrieve request details
+    SELECT Resource_Type, Resource_ID, Employee_ID
+    INTO @resource_type, @resource_id, @employee_id
+    FROM Request WHERE Request_ID = p_request_id;
+
+    -- Approve and allocate the resource if approved
+    IF p_approved THEN
+        -- Allocate hardware or software based on resource type
+        UPDATE Hardware SET Allocation_Status = 'Allocated', Allocated_To = @employee_id
+        WHERE @resource_type = 'Hardware' AND Hardware_ID = @resource_id AND Allocation_Status = 'Available';
+        
+        UPDATE Software SET Allocation_Status = 'Allocated', Allocated_To = @employee_id
+        WHERE @resource_type = 'Software' AND Software_ID = @resource_id AND Allocation_Status = 'Available';
+
+        -- Update request status to "Approved"
+        UPDATE Request SET Status = 'Approved' WHERE Request_ID = p_request_id;
+    ELSE
+        -- Deny the request by updating the status
+        UPDATE Request SET Status = 'Denied' WHERE Request_ID = p_request_id;
+    END IF;
+END //
+DELIMITER ;
+
+
+
