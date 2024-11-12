@@ -13,6 +13,7 @@ CREATE TABLE Team (
 CREATE TABLE Employee (
     Employee_ID INT AUTO_INCREMENT PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
     Role VARCHAR(100),
     Username VARCHAR(100) UNIQUE NOT NULL,
     Password VARCHAR(100) NOT NULL,
@@ -98,13 +99,14 @@ VALUES
 ('Data Analysis', 4, NULL);         -- Headed by Carol Smith 3
 
 -- Insert sample data into Employee table
-INSERT INTO Employee (Name, Role, Username, Password, Is_Admin, Team_ID)
+INSERT INTO Employee (Name, Email, Role, Username, Password, Is_Admin, Team_ID)
 VALUES
-('Alice Johnson', 'Network Engineer', 'alice.johnson', 'password123!', 0, 1),
-('Bob Williams', 'Senior Developer', 'bob.williams', 'password456!', 1, 2), -- Admin user
-('Carol Smith', 'Data Analyst', 'carol.smith', 'data@123', 0, 4),
-('David Brown', 'Support Specialist', 'david.brown', 'support@789', 0, 3),
-('Eve Davis', 'Software Engineer', 'eve.davis', 'dev@abc', 0, 2);
+('Alice Johnson', 'alice.johnson@example.com', 'Network Engineer', 'alice.johnson', 'password123!', 0, 1),
+('Bob Williams', 'bob.williams@example.com', 'Senior Developer', 'bob.williams', 'password456!', 1, 2), -- Admin user
+('Carol Smith', 'carol.smith@example.com', 'Data Analyst', 'carol.smith', 'data@123', 0, 4),
+('David Brown', 'david.brown@example.com', 'Support Specialist', 'david.brown', 'support@789', 0, 3),
+('Eve Davis', 'eve.davis@example.com', 'Software Engineer', 'eve.davis', 'dev@abc', 0, 2);
+
 
 UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'Alice Johnson') WHERE Team_Name = 'Network Security';
 UPDATE Team SET Headed_By = (SELECT Employee_ID FROM Employee WHERE Name = 'Bob Williams') WHERE Team_Name = 'Software Development';
@@ -167,6 +169,7 @@ BEGIN
     SELECT 
         e.Employee_ID,
         e.Name,
+        e.Email,
         e.Role,
         t.Team_Name,
         p.Name AS Project_Name,
@@ -290,6 +293,126 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
+
+-- create a new employee
+
+DELIMITER //
+
+CREATE PROCEDURE create_new_employee(
+    IN emp_name VARCHAR(100),
+    IN emp_email VARCHAR(100),
+    IN emp_role VARCHAR(100),
+    IN emp_is_admin BOOLEAN,
+    OUT emp_username VARCHAR(50),
+    OUT emp_password VARCHAR(50)
+)
+BEGIN
+    SET emp_username = CONCAT(SUBSTRING(emp_name, 1, 3), FLOOR(RAND() * 1000));
+    SET emp_password = CONCAT('P@ss', FLOOR(RAND() * 1000));
+
+    INSERT INTO Employee (Name, Email, Role, Username, Password, Is_Admin)
+    VALUES (emp_name, emp_email, emp_role, emp_username, emp_password, emp_is_admin);
+END //
+
+DELIMITER ;
+
+-- add a hardware resource
+
+DELIMITER //
+
+CREATE PROCEDURE handle_addition_of_new_hardware(
+    IN h_id INT,
+    IN h_name VARCHAR(100),
+    IN h_desc TEXT,
+    IN h_use TEXT,
+    IN h_alloc_status VARCHAR(20)
+)
+BEGIN
+    INSERT INTO Hardware (Hardware_ID, name, description, Usage_Instructions, Allocation_Status)
+    VALUES (h_id, h_name, h_desc, h_use, h_alloc_status);
+END //
+
+DELIMITER ;
+
+-- add a software resource.
+DELIMITER //
+
+CREATE PROCEDURE handle_addition_of_new_software(
+    IN s_id INT,
+    IN s_name VARCHAR(100),
+    IN s_desc TEXT,
+    IN s_key VARCHAR(255),
+    IN s_docs TEXT,
+    IN s_alloc_status VARCHAR(20)
+)
+BEGIN
+    INSERT INTO Software (Software_ID, name, Description, License_Key, Documentation, Allocation_Status)
+    VALUES (s_id, s_name, s_desc, s_key, s_docs, s_alloc_status);
+END //
+
+DELIMITER ;
+
+-- update a hardware resource
+DELIMITER //
+
+CREATE PROCEDURE handle_hardware_updation(
+    IN h_id INT,
+    IN h_name VARCHAR(100),
+    IN h_desc TEXT,
+    IN h_use TEXT,
+    IN h_alloc_status VARCHAR(20)
+)
+BEGIN
+    UPDATE Hardware
+    SET name = h_name,
+        Description = h_desc,
+        usage_instructions = h_use,
+        Allocation_Status = h_alloc_status
+    WHERE Hardware_ID = h_id;
+END //
+
+DELIMITER ;
+
+-- update a software resource
+DELIMITER //
+
+CREATE PROCEDURE handle_software_updation(
+    IN s_id INT,
+    IN s_name VARCHAR(100),
+    IN s_desc TEXT,
+    IN s_key VARCHAR(255),
+    IN s_docs TEXT,
+    IN s_alloc_status VARCHAR(20)
+)
+BEGIN
+    UPDATE Software
+    SET name = s_name,
+        Description = s_desc,
+        License_Key = s_key,
+        Documentation = s_docs,
+        Allocation_Status = s_alloc_status
+    WHERE Software_ID = s_id;
+END //
+
+DELIMITER ;
+
+-- delete a resource
+DELIMITER //
+
+CREATE PROCEDURE handle_resource_deletion(
+    IN resource_type VARCHAR(20),
+    IN r_id INT
+)
+BEGIN
+    IF resource_type = 'Hardware' THEN
+        DELETE FROM Hardware WHERE Hardware_ID = r_id;
+    ELSEIF resource_type = 'Software' THEN
+        DELETE FROM Software WHERE Software_ID = r_id;
+    END IF;
+END //
+
+DELIMITER ;
+
 
 
 
