@@ -60,3 +60,59 @@ Check the schema file (`DBMSxSE_Iter1.sql`) for detailed definitions.
 3. Dependencies installed:
    ```bash
    pip install streamlit mysql-connector-python
+   ```
+Installation Steps
+Clone the Repository:
+```
+git clone <repo_url>
+cd IT-Resource-Management
+```
+Set up the Database:
+
+Import the schema into MySQL:
+```
+mysql -u root -p < DBMSxSE_Iter2.sql
+```
+Update database credentials in infra_management_updated.py:
+```
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'your_db_password',
+    'database': 'it_infra_mgmt'
+}
+```
+Run the Application:
+```
+streamlit run infra_management_updated.py
+```
+Access the application at http://localhost:8501.
+
+## 🖥 User Guide
+Login Page
+* Admins and employees can log in using their credentials.
+  
+Admin Dashboard
+* Manage resources and approve/reject requests.
+* Create new employee accounts.
+* Update or delete existing resources.
+  
+Employee Homepage
+* View personal details, team information, and current projects.
+* Check allocated resources.
+* Submit new resource requests.
+  
+## 📂 Project Structure
+* infra_management_updated.py: Main Python file for the Streamlit app.
+* DBMSxSE_Iter2.sql: Database schema with tables, stored procedures, and views.
+  
+🧪 Testing and Debugging
+Database Connection:
+Verify the MySQL server is running.
+Check credentials in the DB_CONFIG dictionary.
+Resource Requests:
+Ensure no duplicate resource allocations in the database.
+Debugging Streamlit:
+Check error logs in the Streamlit console.
+Verify stored procedures in MySQL.
+
