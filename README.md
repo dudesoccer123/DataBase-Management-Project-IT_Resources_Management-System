@@ -73,7 +73,7 @@ Import the schema into MySQL:
 ```
 mysql -u root -p < DBMSxSE_Iter1.sql
 ```
-Update database credentials in infra_management_updated.py:
+Update database credentials in infra_management.py:
 ```
 DB_CONFIG = {
     'host': 'localhost',
