@@ -84,7 +84,7 @@ DB_CONFIG = {
 ```
 Run the Application:
 ```
-streamlit run infra_management_updated.py
+streamlit run infra_management.py
 ```
 Access the application at http://localhost:8501.
 
@@ -103,16 +103,19 @@ Employee Homepage
 * Submit new resource requests.
   
 ## 📂 Project Structure
-* infra_management_updated.py: Main Python file for the Streamlit app.
-* DBMSxSE_Iter2.sql: Database schema with tables, stored procedures, and views.
+* infra_management.py: Main Python file for the Streamlit app.
+* DBMSxSE_Iter1.sql: Database schema with tables, stored procedures, and views.
   
-🧪 Testing and Debugging
+## 🧪 Testing and Debugging
 Database Connection:
-Verify the MySQL server is running.
-Check credentials in the DB_CONFIG dictionary.
+* Verify the MySQL server is running.
+* Check credentials in the DB_CONFIG dictionary.
+  
 Resource Requests:
-Ensure no duplicate resource allocations in the database.
+* Ensure no duplicate resource allocations in the database.
+  
 Debugging Streamlit:
-Check error logs in the Streamlit console.
+* Check error logs in the Streamlit console.
+  
 Verify stored procedures in MySQL.
 
