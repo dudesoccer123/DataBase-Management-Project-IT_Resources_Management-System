@@ -71,7 +71,7 @@ Set up the Database:
 
 Import the schema into MySQL:
 ```
-mysql -u root -p < DBMSxSE_Iter2.sql
+mysql -u root -p < DBMSxSE_Iter1.sql
 ```
 Update database credentials in infra_management_updated.py:
 ```
