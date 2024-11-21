@@ -6,8 +6,8 @@ from mysql.connector import Error
 
 # Database connection configuration
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
+    'host': 'host name',
+    'user': 'username',
     'password': 'your db password',
     'database': 'it_infra_mgmt'
 }
@@ -229,11 +229,31 @@ def handle_resource_deletion(resource_t_2, r_id):
             cursor = conn.cursor()
             cursor.callproc('handle_resource_deletion', [resource_t_2, r_id])
             conn.commit()
+            st.success(f"Resource Deleted Successfully!")
         except Error as e:
             st.error(f"Error processing request: {e}")
         finally:
             conn.close()
 
+def get_available_resources():
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM Available_Resources_View")
+            return cursor.fetchall()
+        finally:
+            conn.close()
+
+def get_allocated_resources():
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM Allocated_Resources_View")
+            return cursor.fetchall()
+        finally:
+            conn.close()
 
 #-------------------------------------------------------------------------------------------------------------#
 
@@ -279,6 +299,25 @@ def admin_dashboard():
     st.markdown("<h2 style='text-align: center;'>Admin Dashboard</h2>", unsafe_allow_html=True)
     st.write("__________")
     
+    # display data : 
+    st.markdown("<h2 style='text-align: center;'>Available Resources</h2>", unsafe_allow_html=True)
+    available_resources = get_available_resources()
+    if available_resources:
+        for resource in available_resources:
+            st.write(f"**Resource ID:** {resource['Resource_ID']}, **Resource Name:** {resource['Resource_Name']}, **Type:** {resource['Resource_Type']}")
+    else:
+        st.write("No resources available.")
+
+    # Section to display allocated resources by employee
+    st.markdown("<h2 style='text-align: center;'>Allocated Resources</h2>", unsafe_allow_html=True)
+    allocated_resources = get_allocated_resources()
+    if allocated_resources:
+        for resource in allocated_resources:
+            st.write(f"**Employee Name:** {resource['Employee_Name']}, **Resource Name:** {resource['Resource_Name']}, **Type:** {resource['Resource_Type']}")
+    else:
+        st.write("No resources allocated.")
+    
+    st.write("---")
 
     # Get the list of pending requests
     requests_data = get_pending_requests()
@@ -355,13 +394,12 @@ def user_homepage():
     get_allocated_resources_information(st.session_state['userID'])
     
     st.write("")
-    col1, col2 , col3  = st.columns(3)
-    with col3:
-
-        if st.button("Request Resource"):
-            st.session_state["page"] = "Request"  
-            st.rerun() 
     
+
+    if st.button("Request Resource"):
+        st.session_state["page"] = "Request"  
+        st.rerun() 
+
     st.write("_____________")
 
     st.markdown("<p style='text-align: center;'>Database Management And Software Engineering Project 2024 ©</p>", unsafe_allow_html=True)
@@ -377,7 +415,16 @@ def request_resource_page():
 
     st.markdown("<h1 style='text-align: center;'>Resource Request</h1>", unsafe_allow_html=True)
     st.write("_______________")
-    st.markdown("<h3 style='text-align: center;'>Resource request Dashboard</h3>", unsafe_allow_html=True)
+
+    
+    # display data : 
+    st.markdown("<h2 style='text-align: center;'>Available Resources</h2>", unsafe_allow_html=True)
+    available_resources = get_available_resources()
+    if available_resources:
+        for resource in available_resources:
+            st.write(f"**Resource ID:** {resource['Resource_ID']}, **Resource Name:** {resource['Resource_Name']}, **Type:** {resource['Resource_Type']}")
+    else:
+        st.write("No resources available.")
 
     st.write("_______________")
 
@@ -489,7 +536,6 @@ def update_resources_page() :
 
         if submitted : 
             handle_resource_deletion(resource_t_2,r_id)
-            st.success(f"Resource Deleted Successfully!")
             time.sleep(2)
             st.rerun() 
     st.write("---")
