@@ -1,0 +1,77 @@
+1) login : 
+
+Write a function in DBMS That should run when the login is clicked. 
+The user credentials are passed into the function that handels the login functionality. 
+Check if Admin or not using the boolean value. 
+return success / failure and change the state of the page accordingly. 
+
+----------------------------------------------------------------------------------------------
+
+2) User page: 
+
+There is a set state for each user, Using that state:
+write a function in DMBS to get the user credentials like the name, project details, team etc etc. 
+to display the employee details of the user who has logged in. 
+This info has to be returned to python and then displayed. 
+the code to display should be written under the "user_homepage" function. 
+
+3) Display allocated resources information: 
+again using the set state variable for the user who has loggen in, 
+Write a function in DBMS to get the list of resources already allocated to the current logged in user. 
+This information should be returned to python and displayed in the user_homepage() function. 
+
+
+--------------------------------------------------------------------------------------------
+Request resources page :
+
+3) Display the available resources:
+Write a function to fetch the list of all software/hardware resources available. 
+That information must be returned to python and displayed in the request_resource_page() function. 
+
+4) Submit Request : 
+Get the Id of the resource and write a function in dbms to generate a new request. and add that request as a pending request 
+into the requests entity.
+CONCURRENCY CONTROL IMPLEMENTATION (tbd) 
+
+----------------------------------------------------------------------------------------------
+
+ADMINISTRATOR FUNCTIONS. 
+
+if the logged in user is admin , the admin page is diaplayed. 
+
+1) Get the list of resources allocated already and the user to which they are allocated. Write a DBMS function to get these details 
+and display it in the admin homepage. 
+The function to dpsliay should be called in the admin_dashboard() function that displays the page.
+
+2) Get the list of the current pending requests. once that information is returned, display that as click-able elements 
+that the admin can use to accept / deny the request. 
+Write a function in DBMS to return the list of users who are allocated resources. 
+
+Updated_________________________________________________________________________________________________________
+
+3) create a user
+Write a function in DBMS to create a new user. This function procedure is added in the ui. Create_new_employee. But the 
+iter2.sql file does not contain the procedure. pl update. 
+
+4) handle_addition_of_new_hardware:
+write a function in dbms to add a new hardware resource in the table. all the required fields are passed into the function in the UI.
+handle_addition_of_new_hardware(h_id, h_name , h_desc , h_use , h_alloc_status)
+
+5) handle_addition_of_new_software:
+write a function in dbms to add a new hardware resource in the table. All required fields are passed into the function in the UI.
+handle_addition_of_new_software(s_id, s_name , s_desc , s_key , s_docs , s_alloc_status)
+
+6) Handle hardware updation: 
+write a function/procedure in dbms to update a hardware resource. 
+It takes the same inputs as the create function but instead of creating a new resource , we update the respective fields in the table. 
+handle_hardware_updation(h_id, h_name , h_desc , h_use , h_alloc_status)
+
+7) handle software updation: 
+handle_software_updation(s_id, s_name , s_desc , s_key , s_docs , s_alloc_status)
+write a function/procedure in dbms to update a software resource.
+it takes the same inputs as the function for creation. but instead of creating, we update the resource.
+handle_software_updation(s_id, s_name , s_desc , s_key , s_docs , s_alloc_status):
+
+8) handle_resource_deletion(resource_t_2,r_id):
+    takes in the type of resource and its ID. Write a function in dbms to delete the resource with that particular id.
+    all required details are passed into the function.
