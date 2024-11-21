@@ -50,8 +50,7 @@ Write a function in DBMS to return the list of users who are allocated resources
 Updated_________________________________________________________________________________________________________
 
 3) create a user
-Write a function in DBMS to create a new user. This function procedure is added in the ui. Create_new_employee. But the 
-iter2.sql file does not contain the procedure. pl update. 
+Write a function in DBMS to create a new user.
 
 4) handle_addition_of_new_hardware:
 write a function in dbms to add a new hardware resource in the table. all the required fields are passed into the function in the UI.
