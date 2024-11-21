@@ -137,6 +137,70 @@ VALUES
 ('2023-06-01', 75000.00, 'Market Insights Analysis', 4),
 ('2024-03-01', 150000.00, 'Mobile App Development', 2);
 
+-- create Roles
+
+
+-- Create the admin role with full privileges
+-- CREATE ROLE 'admin_role';
+-- GRANT ALL PRIVILEGES ON it_infra_mgmt.* TO 'admin_role';
+
+-- Create the employee role with limited privileges
+-- CREATE ROLE 'employee_role';
+-- GRANT SELECT ON it_infra_mgmt.Software TO 'employee_role';
+-- GRANT SELECT ON it_infra_mgmt.Hardware TO 'employee_role';
+-- GRANT SELECT ON it_infra_mgmt.Team TO 'employee_role';
+-- GRANT SELECT ON it_infra_mgmt.Project TO 'employee_role';
+
+-- FLUSH PRIVILEGES;
+
+
+-- create users for existing data entries. 
+-- CREATE USER 'alice.johnson'@'localhost' IDENTIFIED BY 'password123!';
+-- CREATE USER 'bob.williams'@'localhost' IDENTIFIED BY 'password456!';
+-- CREATE USER 'carol.smith'@'localhost' IDENTIFIED BY 'data@123';
+-- CREATE USER 'david.brown'@'localhost' IDENTIFIED BY 'support@789';
+-- CREATE USER 'eve.davis'@'localhost' IDENTIFIED BY 'dev@abc';
+
+-- FLUSH PRIVILEGES;
+
+
+-- Assign roles to existing employees based on their admin status
+-- G  RANT 'admin_role' TO 'bob.williams'@'localhost';   -- Admin user
+-- GRANT 'employee_role' TO 'alice.johnson'@'localhost';
+-- GRANT 'employee_role' TO 'carol.smith'@'localhost';
+-- GRANT 'employee_role' TO 'david.brown'@'localhost';
+-- GRANT 'employee_role' TO 'eve.davis'@'localhost';
+
+FLUSH PRIVILEGES;
+
+
+
+
+DELIMITER //
+
+CREATE PROCEDURE assign_role_to_employee(
+    IN p_username VARCHAR(50),
+    IN p_is_admin INT
+)
+BEGIN
+    DECLARE grant_query VARCHAR(255);
+
+    -- Assign role based on admin status
+    IF p_is_admin = 1 THEN
+        SET grant_query = CONCAT("GRANT admin_role TO '", p_username, "'@'localhost'");
+    ELSE
+        SET grant_query = CONCAT("GRANT employee_role TO '", p_username, "'@'localhost'");
+    END IF;
+
+    -- Execute the dynamic SQL statement for granting the role
+    SET @stmt = grant_query;
+    PREPARE stmt FROM @stmt;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+END //
+
+DELIMITER ;
+
 
 -- Login function
 DELIMITER //
@@ -265,26 +329,16 @@ BEGIN
 END //
 DELIMITER ;
 
+
 DELIMITER //
+
 CREATE PROCEDURE handle_request_approval(
     IN p_request_id INT,
     IN p_approved BOOLEAN
 )
 BEGIN
-    -- Retrieve request details
-    SELECT Resource_Type, Resource_ID, Employee_ID
-    INTO @resource_type, @resource_id, @employee_id
-    FROM Request WHERE Request_ID = p_request_id;
-
-    -- Approve and allocate the resource if approved
+    -- Approve or deny the request based on the input
     IF p_approved THEN
-        -- Allocate hardware or software based on resource type
-        UPDATE Hardware SET Allocation_Status = 'Allocated', Allocated_To = @employee_id
-        WHERE @resource_type = 'Hardware' AND Hardware_ID = @resource_id AND Allocation_Status = 'Available';
-        
-        UPDATE Software SET Allocation_Status = 'Allocated', Allocated_To = @employee_id
-        WHERE @resource_type = 'Software' AND Software_ID = @resource_id AND Allocation_Status = 'Available';
-
         -- Update request status to "Approved"
         UPDATE Request SET Status = 'Approved' WHERE Request_ID = p_request_id;
     ELSE
@@ -292,9 +346,9 @@ BEGIN
         UPDATE Request SET Status = 'Denied' WHERE Request_ID = p_request_id;
     END IF;
 END //
+
 DELIMITER ;
 
--- create a new employee
 
 DELIMITER //
 
@@ -307,14 +361,29 @@ CREATE PROCEDURE create_new_employee(
     OUT emp_password VARCHAR(50)
 )
 BEGIN
+    -- Generate username and password
     SET emp_username = CONCAT(SUBSTRING(emp_name, 1, 3), FLOOR(RAND() * 1000));
     SET emp_password = CONCAT('P@ss', FLOOR(RAND() * 1000));
 
+    -- Insert the new employee record into the Employee table
     INSERT INTO Employee (Name, Email, Role, Username, Password, Is_Admin)
     VALUES (emp_name, emp_email, emp_role, emp_username, emp_password, emp_is_admin);
+
+    -- Create a MySQL user with the generated username and password
+    SET @create_user_query = CONCAT("CREATE USER '", emp_username, "'@'localhost' IDENTIFIED BY '", emp_password, "'");
+    PREPARE stmt FROM @create_user_query;
+    EXECUTE stmt;
+    FLUSH PRIVILEGES;
+    DEALLOCATE PREPARE stmt;
+
+    -- Call the assign_role_to_employee procedure to grant permissions
+    CALL assign_role_to_employee(emp_username, emp_is_admin);
+    
 END //
 
 DELIMITER ;
+
+
 
 -- add a hardware resource
 
@@ -404,15 +473,96 @@ CREATE PROCEDURE handle_resource_deletion(
     IN r_id INT
 )
 BEGIN
+    DECLARE resource_exists INT DEFAULT 0;
+
+    -- Check if resource exists in the specified table
     IF resource_type = 'Hardware' THEN
-        DELETE FROM Hardware WHERE Hardware_ID = r_id;
+        SELECT COUNT(*) INTO resource_exists FROM Hardware WHERE Hardware_ID = r_id;
+        IF resource_exists = 0 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Hardware resource with specified ID does not exist.';
+        ELSE
+            DELETE FROM Hardware WHERE Hardware_ID = r_id;
+        END IF;
     ELSEIF resource_type = 'Software' THEN
-        DELETE FROM Software WHERE Software_ID = r_id;
+        SELECT COUNT(*) INTO resource_exists FROM Software WHERE Software_ID = r_id;
+        IF resource_exists = 0 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Software resource with specified ID does not exist.';
+        ELSE
+            DELETE FROM Software WHERE Software_ID = r_id;
+        END IF;
     END IF;
 END //
 
 DELIMITER ;
 
+
+-- display available resources
+CREATE VIEW Available_Resources_View AS
+SELECT Hardware_ID AS Resource_ID, Name AS Resource_Name, 'Hardware' AS Resource_Type
+FROM hardware
+WHERE Allocation_Status = 'Available'
+UNION ALL
+SELECT Software_ID AS Resource_ID, Name AS Resource_Name, 'Software' AS Resource_Type
+FROM software
+WHERE Allocation_Status = 'Available';
+
+-- display the allocated resources
+
+CREATE VIEW Allocated_Resources_View AS
+SELECT 
+    h.Hardware_ID AS Resource_ID, 
+    h.Name AS Resource_Name, 
+    'Hardware' AS Resource_Type, 
+    e.Employee_ID, 
+    e.Name AS Employee_Name
+FROM 
+    Hardware h
+JOIN 
+    Employee e ON h.Allocated_To = e.Employee_ID
+WHERE 
+    h.Allocation_Status = 'Allocated'
+
+UNION ALL
+
+SELECT 
+    s.Software_ID AS Resource_ID, 
+    s.Name AS Resource_Name, 
+    'Software' AS Resource_Type, 
+    e.Employee_ID, 
+    e.Name AS Employee_Name
+FROM 
+    Software s
+JOIN 
+    Employee e ON s.Allocated_To = e.Employee_ID
+WHERE 
+    s.Allocation_Status = 'Allocated';
+
+
+-- create a trigger : 
+DELIMITER //
+
+CREATE TRIGGER allocate_resource_on_approval
+AFTER UPDATE ON Request
+FOR EACH ROW
+BEGIN
+    IF NEW.Status = 'Approved' THEN
+        -- Check if the request is for hardware, then update hardware status
+        IF NEW.Resource_Type = 'Hardware' THEN
+            UPDATE Hardware
+            SET Allocation_Status = 'Allocated', Allocated_To = NEW.Employee_ID
+            WHERE Hardware_ID = NEW.Resource_ID;
+        END IF;
+
+        -- Check if the request is for software, then update software status
+        IF NEW.Resource_Type = 'Software' THEN
+            UPDATE Software
+            SET Allocation_Status = 'Allocated', Allocated_To = NEW.Employee_ID
+            WHERE Software_ID = NEW.Resource_ID;
+        END IF;
+    END IF;
+END //
+
+DELIMITER ;
 
 
 
