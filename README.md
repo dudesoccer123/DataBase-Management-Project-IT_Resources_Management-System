@@ -3,7 +3,7 @@
 # IT Resource Management System
 
 ## 📖 Overview
-The **IT Resource Management System** is a comprehensive database-backed application built using **MySQL** and **Streamlit**. It is designed to streamline the allocation, management, and tracking of IT resources (hardware and software) across an organization.
+The **IT Resource Management System** is a comprehensive database-backed application built using **MySQL** and **Streamlit python**. It is designed to streamline the allocation, management, and tracking of IT resources (hardware and software) across an organization.
 
 This project provides:
 - A relational database schema for efficient data storage and retrieval.
@@ -49,7 +49,7 @@ The database schema includes the following tables:
 5. **Request**: Logs resource requests and their statuses.
 6. **Project**: Tracks team-based project assignments.
 
-Check the schema file (`DBMSxSE_Iter2.sql`) for detailed definitions.
+Check the schema file (`DBMSxSE_Iter1.sql`) for detailed definitions.
 
 ---
 
